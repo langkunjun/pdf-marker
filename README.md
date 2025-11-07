@@ -1,4 +1,4 @@
-pdf-marker-langkunjun
+@kunkun/pdf-marker
 一个基于React和PDF.js的PDF标注组件库，支持在PDF文档上创建、编辑和管理交互式标注区域。
 
 🌟 核心功能
@@ -9,99 +9,16 @@ PDF渲染 - 基于PDF.js的高质量PDF文档渲染
 多文件支持 - 支持同时管理多个PDF文件
 响应式设计 - 适配不同屏幕尺寸
 TypeScript - 完整的类型定义支持
-
-⚠️ 兼容性说明（React 16 / Webpack 4）
-
-本库兼容 React 16.8+ 和 Webpack 4。**重要：** 主项目必须在 webpack 配置中添加以下 alias，否则会报错 `Module not found: Can't resolve 'react/jsx-runtime'`。
-
-**webpack.config.js 必须配置（React 16 项目）：**
-
-```javascript
-const path = require('path');
-
-module.exports = {
-  // ... 其他配置
-  resolve: {
-    alias: {
-      // 1. pdfjs-dist 使用 legacy 版本（兼容 Webpack 4）
-      'pdfjs-dist': path.resolve(__dirname, 'node_modules/pdfjs-dist/legacy/build/pdf'),
-      
-      // 2. react/jsx-runtime 映射到 react（React 16 不支持 jsx-runtime）
-      // 这是必需的，因为 react-rnd 的依赖使用了 react/jsx-runtime
-      'react/jsx-runtime': path.resolve(__dirname, 'node_modules/react'),
-      'react/jsx-dev-runtime': path.resolve(__dirname, 'node_modules/react'),
-    },
-  },
-  // 可选：如果需要转译 pdfjs-dist
-  module: {
-    rules: [
-      {
-        test: /\.js$/,
-        include: /node_modules\/pdfjs-dist/,
-        use: {
-          loader: 'babel-loader',
-          options: {
-            presets: ['@babel/preset-env'],
-            plugins: ['@babel/plugin-proposal-class-properties'],
-          },
-        },
-      },
-    ],
-  },
-};
-```
-
-**如果使用 webpack 4 的 resolve.alias 配置（简化版）：**
-
-```javascript
-module.exports = {
-  resolve: {
-    alias: {
-      'pdfjs-dist': 'pdfjs-dist/legacy/build/pdf',
-      'react/jsx-runtime': 'react',
-      'react/jsx-dev-runtime': 'react',
-    },
-  },
-};
-```
-
-**为什么需要这些配置？**
-
-1. `pdfjs-dist` 的标准版本使用了类属性等新语法，Webpack 4 默认不转译 node_modules，需要使用 legacy 版本。
-2. `react-rnd` 的依赖 `re-resizable` 使用了 `react/jsx-runtime`（React 17+ 特性），React 16 不支持，需要通过 alias 映射到 `react`。
-
-**验证配置是否生效：**
-
-在 webpack 配置后，重新启动开发服务器，错误应该消失。如果仍有问题，请检查：
-- webpack 配置是否正确加载
-- node_modules 中的 react 版本是否为 16.x
-- 是否有其他 webpack 插件覆盖了 alias 配置
-
 📦 安装
-```bash
-npm install pdf-marker-langkunjun
+npm install @kunkun/pdf-marker
 # 或
-yarn add pdf-marker-langkunjun
+yarn add @kunkun/pdf-marker
 # 或
-pnpm add pdf-marker-langkunjun
-```
-
-**重要：** 如果使用 `generateFilePreviews` 等方法，需要配置 PDF.js worker：
-
-```javascript
-import { setPdfWorkerSrc } from "pdf-marker-langkunjun";
-
-// 方案 1：使用 CDN（默认，推荐）
-setPdfWorkerSrc('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js');
-
-// 方案 2：使用本地 worker（需要复制文件到 public 目录）
-// 详见 WEBPACK4_CONFIG.md 中的配置说明
-setPdfWorkerSrc('/pdf.worker.min.js');
-```
+pnpm add @kunkun/pdf-marker
 🔧 快速开始
 基础使用
 import React from 'react';
-import { PdfMarkerViewer } from 'pdf-marker-langkunjun';
+import { PdfMarkerViewer } from '@kunkun/pdf-marker';
 
 function App() {
   return (

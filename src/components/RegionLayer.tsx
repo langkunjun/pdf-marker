@@ -39,7 +39,7 @@ export const RegionLayer: React.FC<Props> = memo(({ fileId, scale = 1, onRegionC
   }, [isEditing, onRegionClick]);
 
   return (
-    <div className="absolute inset-0 pointer-events-none">
+    <>
       {displayRegions.map((r) => (
         readOnly ? (
           <div
@@ -145,7 +145,7 @@ export const RegionLayer: React.FC<Props> = memo(({ fileId, scale = 1, onRegionC
         </RndComponent>
         )
       ))}
-    </div>
+    </>
   );
 });
 

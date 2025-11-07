@@ -162,6 +162,6 @@ export const PdfMarkerViewer: React.FC<Props> = ({
           filterPageIndex={pageIndex}
         />
       </div>
-      </div>
+    </div>
   );
 };

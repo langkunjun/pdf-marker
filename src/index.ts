@@ -1,7 +1,3 @@
-// 确保在首次使用前就配置好 worker 源
-import { ensurePdfWorkerConfigured } from './core/pdfWorker';
-ensurePdfWorkerConfigured();
-
 export * from './components/PdfMarkerViewer';
 export * from './components/RegionLayer';
 export * from './components/FileTabs';

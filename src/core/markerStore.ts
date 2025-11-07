@@ -115,32 +115,17 @@ export const useMarkerStore = create<MarkerState>((set) => ({
   },
   
   updateFileRegions: (fileId, regions) => {
-    console.log('[markerStore] updateFileRegions called', {
-      fileId,
-      regionsCount: regions.length,
-      regions: regions
-    });
-    
+    console.log('[markerStore] updateFileRegions called', fileId);
     set((state) => {
       const file = state.files[fileId];
-      if (!file) {
-        console.warn('[markerStore] File not found:', fileId);
-        return state;
-      }
+      if (!file) return state;
       
-      const newState = {
+      return {
         files: {
           ...state.files,
           [fileId]: { ...file, regions }
         }
       };
-      
-      console.log('[markerStore] State updated:', {
-        previousRegions: file.regions,
-        newRegions: regions
-      });
-      
-      return newState;
     });
   },
   
