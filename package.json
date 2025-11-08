@@ -1,10 +1,17 @@
 {
   "name": "pdf-marker-langkunjun",
-  "version": "0.1.4",
+  "version": "0.1.12",
   "author" : "langkunjun <langkunjun@126.com>",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.esm.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
   "files": [
     "dist"
   ],
@@ -16,9 +23,8 @@
   "dependencies": {
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^2.16.105",
-    "react-rnd": "^10.4.0",
+    "react-rnd": "10.3.7",
     "uuid": "^8.3.2",
-    "yarn": "^1.22.22",
     "zustand": "^4.4.0"
   },
   "peerDependencies": {

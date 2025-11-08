@@ -64,11 +64,14 @@ export const PdfMarkerViewer: React.FC<Props> = ({
 
         if (!mounted) return;
 
-        // 更新页数到store
-        const { updateFilePageCount } = useMarkerStore.getState();
+        // 更新页数到store（只在页数未设置时更新，避免触发无限循环）
+        const currentFile = useMarkerStore.getState().files[fileId];
         const pageCount = pdfDocument.numPages;
         console.log('[PdfMarkerViewer] Total pages:', pageCount);
-        updateFilePageCount(fileId, pageCount);
+        if (!currentFile?.pageCount) {
+          const { updateFilePageCount } = useMarkerStore.getState();
+          updateFilePageCount(fileId, pageCount);
+        }
 
         console.log('[PdfMarkerViewer] Getting page ...', pageIndex + 1);
         const page = await pdfDocument.getPage(pageIndex + 1);
@@ -137,22 +140,57 @@ export const PdfMarkerViewer: React.FC<Props> = ({
 
   if (error) {
     return (
-      <div className="p-4 bg-red-50 border border-red-200 rounded text-red-800">
+      <div style={{
+        padding: '16px',
+        backgroundColor: '#fef2f2',
+        border: '1px solid #fecaca',
+        borderRadius: '4px',
+        color: '#991b1b'
+      }}>
         Error loading PDF: {error}
       </div>
     );
   }
 
   return (
-    <div className="relative inline-block border shadow">
+    <div style={{ 
+      position: 'relative', 
+      display: 'inline-block',
+      border: '1px solid #e5e7eb',
+      boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
+    }}>
       {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 bg-opacity-90 z-10">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <span className="ml-2">Loading PDF...</span>
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          right: 0,
+          bottom: 0,
+          left: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: 'rgba(243, 244, 246, 0.9)',
+          zIndex: 10
+        }}>
+          <div style={{
+            border: '2px solid #2563eb',
+            borderTopColor: 'transparent',
+            borderRadius: '50%',
+            width: '32px',
+            height: '32px',
+            animation: 'spin 1s linear infinite'
+          }}></div>
+          <span style={{ marginLeft: '8px' }}>Loading PDF...</span>
         </div>
       )}
       <canvas ref={canvasRef} />
-      <div className="absolute inset-0">
+      <div style={{ 
+        position: 'absolute', 
+        top: 0, 
+        right: 0, 
+        bottom: 0, 
+        left: 0 
+      }}>
         <RegionLayer
           fileId={fileId}
           scale={scale}

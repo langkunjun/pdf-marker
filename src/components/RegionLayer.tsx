@@ -1,10 +1,6 @@
 import React, { memo, useCallback } from 'react';
 import { useMarkerStore } from '../core/markerStore';
-
-// 兼容 React 16 / Webpack 4：react-rnd 可能只有默认导出
-declare const require: any;
-const Rnd = require('react-rnd');
-const RndComponent = (Rnd.default || Rnd) as React.ComponentType<any>;
+import { Rnd } from 'react-rnd';
 
 interface Props {
   fileId: string;
@@ -75,7 +71,7 @@ export const RegionLayer: React.FC<Props> = memo(({ fileId, scale = 1, onRegionC
           )}
         </div>
         ) : (
-        <RndComponent
+        <Rnd
           key={r.id}
           size={{ width: r.width * scale, height: r.height * scale }}
           position={{ x: r.x * scale, y: r.y * scale }}
@@ -142,7 +138,7 @@ export const RegionLayer: React.FC<Props> = memo(({ fileId, scale = 1, onRegionC
           >
             ×
           </button>
-        </RndComponent>
+        </Rnd>
         )
       ))}
     </>
