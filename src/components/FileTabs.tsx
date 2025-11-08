@@ -1,23 +1,6 @@
 import React from 'react';
 import { useMarkerStore } from '../core/markerStore';
-
-// 兼容 zustand 4.x：shallow 可能在不同路径
-declare const require: any;
-
-// 定义 shallow 比较函数的类型
-type ShallowSelector = <T>(selector: (state: any) => T) => (state: any) => T;
-
-let useShallow: ShallowSelector;
-try {
-  useShallow = require('zustand/shallow');
-} catch {
-  try {
-    useShallow = require('zustand/react/shallow');
-  } catch {
-    // 如果都不存在，使用简单的相等比较（返回原函数）
-    useShallow = <T,>(fn: (state: any) => T) => fn as any;
-  }
-}
+import { useShallow } from 'zustand/react/shallow';
 
 interface FileTabsProps {
   onFileSwitch?: (fileId: string) => void;

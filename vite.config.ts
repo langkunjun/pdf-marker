@@ -11,7 +11,7 @@ export default defineConfig({
     },
     rollupOptions: {
       // React 16 不需要 react/jsx-runtime，移除它
-      external: ['react', 'react-dom', 'pdfjs-dist', 'pdfjs-dist/legacy/build/pdf', 'uuid', 'zustand', 'react-rnd'],
+      external: ['react', 'react-dom', 'pdfjs-dist', 'pdfjs-dist/legacy/build/pdf', 'pdf-lib', 'uuid', 'zustand', 'react-rnd'],
       output: {
         globals: {
           react: 'React',
