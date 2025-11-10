@@ -11,10 +11,12 @@ interface Props {
   fileId: string;
   fileUrl: string;
   pageIndex?: number; // 0-based
-  isEditing: boolean;
+  isEditing?: boolean; // 编辑模式（添加新区域时禁用点击）
+  readOnly?: boolean; // 只读模式（禁用拖拽/缩放/删除）
   onRegionClick?: (regionId: string) => void;
   onRegionDelete?: (regionId: string) => void;
   onError?: (error: string) => void;
+  containerWidth?: number; // 容器宽度，用于自适应缩放
 }
 
 export const PdfMarkerViewer: React.FC<Props> = ({ 
@@ -23,13 +25,17 @@ export const PdfMarkerViewer: React.FC<Props> = ({
   pageIndex = 0,
   onRegionClick,
   onRegionDelete,
-  isEditing,
+  isEditing = false,
+  readOnly = false,
+  containerWidth,
   onError 
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [scale, setScale] = useState(1.5); // PDF 渲染缩放比例
+  const [actualScale, setActualScale] = useState(1); // 实际显示缩放比例（用于适配容器）
 
   useEffect(() => {
     console.log('[PdfMarkerViewer] useEffect called', fileId, fileUrl, pageIndex);
@@ -115,6 +121,21 @@ export const PdfMarkerViewer: React.FC<Props> = ({
         console.log('[PdfMarkerViewer] Page rendered successfully');
         
         if (!mounted) return;
+        
+        // 计算自适应缩放比例（用于移动端等场景）
+        if (containerWidth && canvas.width > 0) {
+          const scaleRatio = containerWidth / canvas.width;
+          console.log('[PdfMarkerViewer] Container width:', containerWidth, 'Canvas width:', canvas.width, 'Scale ratio:', scaleRatio);
+          setActualScale(scaleRatio);
+        } else if (containerRef.current && canvas.width > 0) {
+          const containerActualWidth = containerRef.current.offsetWidth;
+          if (containerActualWidth > 0) {
+            const scaleRatio = containerActualWidth / canvas.width;
+            console.log('[PdfMarkerViewer] Auto-detected container width:', containerActualWidth, 'Canvas width:', canvas.width, 'Scale ratio:', scaleRatio);
+            setActualScale(scaleRatio);
+          }
+        }
+        
         console.log('[PdfMarkerViewer] Setting loading to false');
         setIsLoading(false);
       } catch (err) {
@@ -153,12 +174,16 @@ export const PdfMarkerViewer: React.FC<Props> = ({
   }
 
   return (
-    <div style={{ 
-      position: 'relative', 
-      display: 'inline-block',
-      border: '1px solid #e5e7eb',
-      boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
-    }}>
+    <div 
+      ref={containerRef}
+      style={{ 
+        position: 'relative', 
+        display: 'block',
+        width: '100%',
+        border: '1px solid #e5e7eb',
+        boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
+      }}
+    >
       {isLoading && (
         <div style={{
           position: 'absolute',
@@ -183,7 +208,14 @@ export const PdfMarkerViewer: React.FC<Props> = ({
           <span style={{ marginLeft: '8px' }}>Loading PDF...</span>
         </div>
       )}
-      <canvas ref={canvasRef} />
+      <canvas 
+        ref={canvasRef}
+        style={{
+          display: 'block',
+          width: '100%',
+          height: 'auto'
+        }}
+      />
       <div style={{ 
         position: 'absolute', 
         top: 0, 
@@ -193,9 +225,10 @@ export const PdfMarkerViewer: React.FC<Props> = ({
       }}>
         <RegionLayer
           fileId={fileId}
-          scale={scale}
+          scale={scale * actualScale}
           onRegionClick={onRegionClick}
           isEditing={isEditing}
+          readOnly={readOnly}
           onRegionDelete={onRegionDelete}
           filterPageIndex={pageIndex}
         />
