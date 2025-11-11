@@ -329,9 +329,11 @@ interface PdfMarkerViewerProps {
   scale?: number;                          // 缩放比例，默认 1.0
   pageIndex?: number;                      // 当前页码，默认 0
   isEditing?: boolean;                     // 是否处于编辑模式，默认 false
+    readOnly?: boolean;                    // 只读模式（禁用拖拽/缩放/删除）
   onRegionClick?: (regionId: string) => void;    // 区域点击回调
   onRegionDelete?: (regionId: string) => void;   // 区域删除回调
   onError?: (error: string) => void;             // 错误处理回调
+  containerWidth?: number;                 // 容器宽度，用于自适应缩放
 }
 ```
 
@@ -826,6 +828,12 @@ npm run type-check
 ```
 
 ## 📝 更新日志
+### v0.1.14
+
+- ✅ 标注区插入图片成功自动更该标注区状态
+- ✅ 添加generateSignedPdf( fileId: string ),该方法根据标注区配置生成新的pdf文件
+
+
 ### v0.1.13
 
 - ✅ 支持等比例缩放

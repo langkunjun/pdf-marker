@@ -1,6 +1,6 @@
 {
   "name": "pdf-marker-langkunjun",
-  "version": "0.1.13",
+  "version": "0.1.15",
   "author" : "langkunjun <langkunjun@126.com>",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
