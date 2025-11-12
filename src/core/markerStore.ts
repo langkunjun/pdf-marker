@@ -16,7 +16,7 @@ interface MarkerState {
   // 向指定文件的指定区域插入图片（图片按“等比包含”缩放，并记录在 region.meta 中）
   insertImageIntoRegion: (fileId: string, regionId: string, imageSrc: string) => Promise<void>;
   splitPdfPages: (fileId: string, options?: { pageIndices?: number[], splitIntoIndividual?: boolean }) => Promise<Uint8Array | Uint8Array[]>;
-  generateSignedPdf: (fileId: string) => Promise<Uint8Array | null>;
+  generateSignedPdf: (fileId: string, removeBackground?: boolean) => Promise<Uint8Array | null>;
 }
 
 // 使用最简单的zustand实现，避免任何复杂的比较逻辑
@@ -278,16 +278,17 @@ export const useMarkerStore = create<MarkerState>((set) => ({
     }
   },
    // 将签名插入 PDF 并生成新文件
-  generateSignedPdf: async (fileId: string) => {
+  generateSignedPdf: async (fileId: string, removeBackground: boolean = false) => {
     if (!fileId) return null;
     const state = useMarkerStore.getState();
     const file = state.files[fileId];
     if (!file) return null;
     try {
-      // 动态导入 pdf-lib
+      // 动态导入 pdf-lib 和 imageUtils
       const { PDFDocument } = await import('pdf-lib');
+      const { loadImage, fitImageContain, processPngRemoveBackground } = await import('./imageUtils');
       
-      console.log('[FilePreview] 开始生成带签名的 PDF...');
+      console.log('[markerStore] 开始生成带签名的 PDF...', { fileId, removeBackground });
       
       // 1. 加载原始 PDF
       const existingPdfBytes = await fetch(file.url).then(res => res.arrayBuffer());
@@ -324,50 +325,72 @@ export const useMarkerStore = create<MarkerState>((set) => ({
             const imgBuffer = await imgResponse.arrayBuffer();
             imgBytes = new Uint8Array(imgBuffer);
           }
+          
           const isPng = imgBytes.length > 4
             && imgBytes[0] === 0x89 && imgBytes[1] === 0x50 && imgBytes[2] === 0x4E && imgBytes[3] === 0x47;
           const isJpg = imgBytes.length > 3
             && imgBytes[0] === 0xFF && imgBytes[1] === 0xD8 && imgBytes[2] === 0xFF;
-
+          
+          console.log('[markerStore] 图片格式检测:', { isPng, isJpg, removeBackground });
+          
           let signImage;
           if (isPng) {
-            signImage = await pdfDoc.embedPng(imgBytes);
+            // 对于 PNG，根据 removeBackground 参数决定是否移除背景
+            if (removeBackground) {
+              try {
+                const processedBytes = await processPngRemoveBackground(src);
+                signImage = await pdfDoc.embedPng(processedBytes);
+                console.log('[markerStore] PNG 背景已移除并嵌入');
+              } catch (error) {
+                console.warn('[markerStore] 背景移除失败，使用原始 PNG:', error);
+                // 如果处理失败，使用原始 PNG
+                signImage = await pdfDoc.embedPng(imgBytes);
+              }
+            } else {
+              signImage = await pdfDoc.embedPng(imgBytes);
+            }
           } else if (isJpg) {
             signImage = await pdfDoc.embedJpg(imgBytes);
           } else {
             throw new Error('不支持的签名图片格式或内容异常');
           }
           
+          // 获取图片尺寸并计算适配尺寸
+          const { width: imgW, height: imgH } = await loadImage(src);
+          const { width: fitW, height: fitH } = fitImageContain(imgW, imgH, region.width, region.height);
+          
+          // 计算图片在区域内的居中偏移（以区域左上角为原点）
+          const offsetX = Math.max(0, (region.width - fitW) / 2);
+          const offsetY = Math.max(0, (region.height - fitH) / 2);
+          
           // 计算签名在 PDF 中的位置和大小
           // PDF 坐标系：左下角为原点，y 轴向上
           // 标注框坐标系：左上角为原点，y 轴向下
           // 需要转换坐标系
-          const x = region.x;
-          const y = pageHeight - region.y - region.height; // 转换 y 坐标
-          const width = region.width;
-          const height = region.height;
+          const x = region.x + offsetX;
+          const y = pageHeight - region.y - region.height + offsetY; // 转换 y 坐标
           
           // 在 PDF 页面上绘制签名图片
           page.drawImage(signImage, {
             x: x,
             y: y,
-            width: width,
-            height: height,
+            width: fitW,
+            height: fitH,
           });
           
-          console.log('[FilePreview] 已插入签名到页面', region.pageIndex, {
-            x, y, width, height
+          console.log('[markerStore] 已插入签名到页面', region.pageIndex, {
+            x, y, width: fitW, height: fitH, offsetX, offsetY
           });
         }
       }
       
       // 3. 生成新的 PDF 字节数组
       const pdfBytes = await pdfDoc.save();
-      console.log('[FilePreview] PDF 生成成功，大小:', pdfBytes.length, 'bytes');
+      console.log('[markerStore] PDF 生成成功，大小:', pdfBytes.length, 'bytes');
       
       return pdfBytes;
     } catch (error) {
-      console.error('[FilePreview] 生成 PDF 失败:', error);
+      console.error('[markerStore] 生成 PDF 失败:', error);
       throw error;
     }
   },

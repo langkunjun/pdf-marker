@@ -34,4 +34,70 @@ export function loadImage(src: string): Promise<{ width: number; height: number 
   });
 }
 
-
+// 处理 PNG 图片，移除白色背景，保留透明通道
+export function processPngRemoveBackground(imageSrc: string, threshold: number = 240): Promise<Uint8Array> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    
+    img.onload = () => {
+      try {
+        // 创建 canvas
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        
+        if (!ctx) {
+          reject(new Error('无法创建 canvas context'));
+          return;
+        }
+        
+        // 绘制图片
+        ctx.drawImage(img, 0, 0);
+        
+        // 获取图片数据
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+        
+        // 移除白色背景（将接近白色的像素设为透明）
+        // 阈值：如果 RGB 都接近 255，则认为是白色背景
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+          
+          // 如果像素接近白色，将 alpha 设为 0（透明）
+          if (r >= threshold && g >= threshold && b >= threshold) {
+            data[i + 3] = 0; // 设置 alpha 为 0（完全透明）
+          }
+        }
+        
+        // 将处理后的数据写回 canvas
+        ctx.putImageData(imageData, 0, 0);
+        
+        // 将 canvas 转换为 PNG blob，然后转换为 Uint8Array
+        canvas.toBlob((blob) => {
+          if (!blob) {
+            reject(new Error('无法生成 blob'));
+            return;
+          }
+          
+          const reader = new FileReader();
+          reader.onload = () => {
+            const arrayBuffer = reader.result as ArrayBuffer;
+            const uint8Array = new Uint8Array(arrayBuffer);
+            resolve(uint8Array);
+          };
+          reader.onerror = () => reject(new Error('读取 blob 失败'));
+          reader.readAsArrayBuffer(blob);
+        }, 'image/png');
+      } catch (error) {
+        reject(error);
+      }
+    };
+    
+    img.onerror = () => reject(new Error('图片加载失败'));
+    img.src = imageSrc;
+  });
+}

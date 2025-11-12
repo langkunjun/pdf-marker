@@ -511,6 +511,29 @@ if (error) {
 }
 ```
 
+#### `imageUtils`
+
+图片相关工具方法。
+
+```typescript
+// 读取图片自然尺寸（宽/高）
+function loadImage(src: string): Promise<{ width: number; height: number }>
+
+// 等比缩放，使图片完整“包含”在容器内，不裁剪且不溢出
+function fitImageContain(
+  imgWidth: number,
+  imgHeight: number,
+  containerWidth: number,
+  containerHeight: number
+): { width: number; height: number }
+
+// 移除 PNG 白色背景，保留透明通道，返回可直接用于 pdf-lib 的 PNG 字节
+function processPngRemoveBackground(imageSrc: string, threshold?: number): Promise<Uint8Array>
+```
+
+说明：
+- `processPngRemoveBackground` 会将接近白色的像素（RGB 均 ≥ `threshold`，默认 240）设为透明。对白底签名 PNG 有效，避免 PDF 上的内容被白底遮挡。
+
 #### `setPdfWorkerSrc`
 
 配置 PDF.js Worker 路径。
@@ -765,6 +788,33 @@ function ExportAnnotations() {
 }
 ```
 
+### 生成带签名的 PDF（支持 PNG 去白背景）
+
+```jsx
+import { useMarkerStore } from 'pdf-marker-langkunjun';
+
+function GenerateSignedButton({ fileId }) {
+  const generateSignedPdf = useMarkerStore(state => state.generateSignedPdf);
+
+  const handleGenerate = async () => {
+    // 将 removeBackground 设为 true，可在 PNG 嵌入前移除近白背景，避免遮挡 PDF 内容
+    const pdfBytes = await generateSignedPdf(fileId, true);
+    if (pdfBytes) {
+      // 例如下载生成的 PDF
+      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'signed.pdf';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  };
+
+  return <button onClick={handleGenerate}>生成签名 PDF</button>;
+}
+```
+
 ## 🚨 错误处理
 
 组件内置了错误处理机制：
@@ -828,6 +878,12 @@ npm run type-check
 ```
 
 ## 📝 更新日志
+### v0.1.15
+
+- ✅ generateSignedPdf 增强：新增可选参数 `removeBackground?: boolean`。当为 `true` 且签名为 PNG 时，会在嵌入 PDF 前移除近白背景，保留透明通道，避免遮挡 PDF 内容
+- ✅ 新增图片工具方法 `processPngRemoveBackground(imageSrc: string, threshold = 240)`，可对 PNG 进行背景去除处理（默认阈值 240，可按需调整）
+- ✅ 导出 `processPngRemoveBackground`、`fitImageContain`、`loadImage` 以便外部复用
+
 ### v0.1.14
 
 - ✅ 标注区插入图片成功自动更该标注区状态
